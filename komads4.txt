@@ -1,0 +1,54 @@
+БАЗА:
+uv init --lib
+uv add --dev ruff pytest
+1)M1
+uv run python -c "from pathlib import Path; from findex1.corpus import iter_documents; doc = next(iter_documents('data')); print(doc.doc_id, len(doc.text))"
+CORPUS
+2)M2 tokenizer
+uv run pytest
+3)M3 stats
+na 100
+uv run python -m findex1.stats -N 100
+full
+uv run python -m findex1.stats
+4)M4
+uv run python benchmark.py
+
+Mbonus
+uv run ruff check
+uv run ruff check --fix .
+uv run ruff format .
+
+LAB\02\
+
+M1
+uv run python -c "from pathlib import Path; from lab_02.pipeline import iter_documents; doc = next(iter_documents('D:/pr/findex1/data')); print(doc.doc_id, len(doc.text))"
+lab_02.pipeline
+uv run python test/test_index.py
+m2
+uv run python test/test_search.py
+m3
+uv run python test/measure_store.py
+uv run python test/clim3.py index D:/pr/findex1/data --out index.bin
+uv run python test/clim3.py search index.bin "arg"
+m4
+uv run python test/measure_m4.py
+
+LAB\03\
+uv run pytest -v
+m1
+uv run pytest tests\test_m1.py -v
+m2
+uv run pytest tests/test_search.py -v
+m3
+uv run pytest tests/test_query.py -v
+m4
+uv run pytest tests/test_m4.py -v
+uv run python eval.py
+uv run python sanity_checks.py
+uv run python run_demo.py
+
+LAB\04\
+uv tool install . --force
+findex -v index "D:\pr\findex1\data" --out index.bin --positions
+findex stats index.bin
