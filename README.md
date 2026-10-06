@@ -1,4 +1,4 @@
-[![CI](https://github.com/Spamik228/Lab-04/actions/workflows/ci2.yml/badge.svg)](https://github.com/Spamik228/Lab-04/actions/workflows/ci2.yml)
+[![CI](https://github.com/Spamik228/Lab-04/actions/workflows/ci.yml/badge.svg)](https://github.com/Spamik228/Lab-04/actions/workflows/ci.yml)
 ## Installation
 
 ### From local source (Development)
