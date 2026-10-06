@@ -1,4 +1,4 @@
-[![CI](https://github.com/<Spamik228>/<Lab-04>/actions/workflows/ci.yml/badge.svg)](https://github.com/<Spamik228>/<Lab-04>/actions/workflows/ci.yml)
+[![CI](https://github.com/Spamik228/Lab-04/actions/workflows/ci.yml/badge.svg)](https://github.com/Spamik228/Lab-04/actions/workflows/ci.yml)
 ## Встановлення та запуск
 
 ### 1. Встановлення як глобальну утиліту (CLI)
