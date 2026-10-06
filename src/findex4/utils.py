@@ -1,7 +1,8 @@
 import functools
 import logging
 import time
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("findex3")

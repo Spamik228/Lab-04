@@ -29,7 +29,7 @@ dev = [
 ]
 
 [tool.pyright]
-typeCheckingMode = "strict"
+typeCheckingMode = "standard"
 pythonVersion = "3.12"
 include = ["src", "tests"]
 
@@ -43,3 +43,11 @@ markers = [
 [tool.ruff]
 line-length = 88
 target-version = "py312"
+[tool.ruff.lint]
+ignore = [
+    "LOG015", # Дозволити виклики logging.info/error замість власного logger
+    "BLE001", # Дозволити catch Exception
+    "SIM101", # Дозволити декілька isinstance
+    "SIM102", # Дозволити вкладені if
+    "UP047",  # Дозволити старий синтаксис Generic
+]

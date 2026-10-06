@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Iterator
+from typing import Any
 
 from findex4.index import Index
 from findex4.tokenizer import tokenize
@@ -11,10 +11,8 @@ from findex4.tokenizer import tokenize
 
 class QueryNode(ABC):
 
-
     @abstractmethod
     def evaluate(self, index: Index) -> set[int]:
-
         ...
 
     def __and__(self, other: QueryNode) -> QueryNode:
@@ -49,7 +47,6 @@ class Phrase(QueryNode):
         if not self.terms:
             return set()
 
-
         norm_terms = []
         for t in self.terms:
             toks = list(tokenize(t))
@@ -59,10 +56,8 @@ class Phrase(QueryNode):
         if not norm_terms:
             return set()
 
-
         if len(norm_terms) == 1:
             return Term(norm_terms[0]).evaluate(index)
-
 
         candidate_docs: set[int] | None = None
         for term in norm_terms:
@@ -79,9 +74,7 @@ class Phrase(QueryNode):
 
         matching_docs: set[int] = set()
 
-
         for doc_id in candidate_docs:
-
             positions_per_term: list[tuple[int, ...]] = []
             for term in norm_terms:
                 postings = index[term]
@@ -92,7 +85,6 @@ class Phrase(QueryNode):
 
             if not all(positions_per_term):
                 continue
-
 
             first_positions = positions_per_term[0]
             found = False
@@ -135,10 +127,13 @@ class Not(QueryNode):
     node: QueryNode
 
     def evaluate(self, index: Index) -> set[int]:
-        all_docs = set(index._doc_meta.keys())
+        idx_obj: Any = index
+        doc_meta = getattr(idx_obj, "_doc_meta", getattr(idx_obj, "doc_meta", {}))
+        if isinstance(doc_meta, dict):
+            all_docs = set(doc_meta.keys())
+        else:
+            all_docs = set()
         return all_docs - self.node.evaluate(index)
-
-
 
 
 TOKEN_RE = re.compile(r'\"[^\"]+\"|\(|\)|AND|OR|NOT|&&|\|\||!|~|[^\s()"]+')
@@ -226,15 +221,14 @@ class Parser:
         return Term(tok)
 
 
-
 def parse(query_str: str) -> QueryNode:
-
     tokens = tokenize_query(query_str)
     if not tokens:
         return Term("")
     return Parser(tokens).parse()
-def extract_terms(node: QueryNode) -> list[str]:
 
+
+def extract_terms(node: QueryNode) -> list[str]:
     if isinstance(node, Term):
         return list(tokenize(node.term))
     elif isinstance(node, Phrase):
@@ -242,10 +236,13 @@ def extract_terms(node: QueryNode) -> list[str]:
         for t in node.terms:
             res.extend(list(tokenize(t)))
         return res
-    elif isinstance(node, And) or isinstance(node, Or):
+    elif isinstance(node, (And, Or)):
         return extract_terms(node.left) + extract_terms(node.right)
     elif isinstance(node, Not):
         return []
-    elif hasattr(node, "left") and hasattr(node, "right"):
-        return extract_terms(node.left) + extract_terms(node.right)
+    else:
+        left_node = getattr(node, "left", None)
+        right_node = getattr(node, "right", None)
+        if isinstance(left_node, QueryNode) and isinstance(right_node, QueryNode):
+            return extract_terms(left_node) + extract_terms(right_node)
     return []

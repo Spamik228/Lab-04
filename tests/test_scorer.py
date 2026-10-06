@@ -1,7 +1,7 @@
 import pytest
+
 from findex4.index import CorpusDocument, Posting, build_index
 from findex4.scorer import BM25
-
 
 # --- 1. Фікстура спеціального корпусу для перевірки властивостей BM25 ---
 

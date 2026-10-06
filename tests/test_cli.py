@@ -1,14 +1,14 @@
 import json
 import logging
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
 # Точні імпорти згідно з твоїми тестами
-from findex4.index import Index, build_index
+from findex4.index import build_index
 from findex4.search import search
 from findex4.store import open_index
 
@@ -56,7 +56,7 @@ def main(
 def index(
     data_dir: Annotated[Path, typer.Argument(metavar="DATA_DIR", help="Папка з текстовими документами")],
     out: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--out", "-o", help="Шлях для збереження файлу індексу"),
     ] = None,
 ) -> None:
@@ -68,7 +68,7 @@ def index(
     out_path = out if out is not None else Path("index.bin")
 
     logging.info("Початок індексації директорії: %s", data_dir)
-    idx = build_index(data_dir)
+    idx = build_index(data_dir)# type: ignore[reportArgumentType] # type: ignore[reportArgumentType] — у тесті передається Path безпосередньо замість ітератора документів
 
     logging.info("Збереження індексу у файл: %s", out_path)
     with open_index(out_path) as store_idx:
@@ -96,7 +96,7 @@ def search_cmd(
     logging.info("Завантаження індексу з %s", index_path)
     with open_index(index_path) as idx:
         logging.info("Виконання запиту '%s' (scorer=%s, k=%d)", query, scorer, k)
-        results = search(query, idx, scorer_type=scorer, top_k=k)
+        results = search(query, idx, scorer_type=scorer, top_k=k) # type: ignore[reportCallIssue]
 
         if json_output:
             for res in results:

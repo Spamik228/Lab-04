@@ -1,10 +1,11 @@
 from pathlib import Path
+
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
-from findex4.index import CorpusDocument, Index, build_index
+from findex4.index import CorpusDocument, build_index
 from findex4.store import open_index
-
 
 # --- 0. Фікстура sample_corpus ---
 

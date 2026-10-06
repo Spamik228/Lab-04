@@ -4,7 +4,6 @@ from findex4.index import CorpusDocument, build_index
 from findex4.query import And, Not, Or, Phrase, QueryNode, Term, parse
 from findex4.search import search
 
-
 # --- 1. Параметризований тест для перевірки AST (Tree Equality) ---
 
 @pytest.mark.parametrize(

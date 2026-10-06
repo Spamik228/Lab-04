@@ -2,7 +2,8 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TypedDict, NotRequired
+from typing import NotRequired, TypedDict
+
 from findex4.utils import timed
 
 

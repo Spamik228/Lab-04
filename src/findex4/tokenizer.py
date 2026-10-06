@@ -2,7 +2,6 @@ import re
 import unicodedata
 from collections.abc import Iterator
 
-
 WORD_PATTERN = re.compile(
     r"\b[\w]+(?:['’\-][\w]+)*\b",
     re.UNICODE,

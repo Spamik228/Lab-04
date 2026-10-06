@@ -1,10 +1,10 @@
 import unicodedata
-import pytest
-from hypothesis import given, strategies as st
-from findex4.tokenizer import tokenize
-from findex4.index import CorpusDocument, Index, build_index
-from findex4.store import open_index
 
+import pytest
+from hypothesis import given
+from hypothesis import strategies as st
+
+from findex4.tokenizer import tokenize
 
 
 @pytest.mark.parametrize(

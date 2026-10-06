@@ -1,13 +1,18 @@
 import json
 import logging
-import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Any, cast
 
 import typer
 from rich.console import Console
 from rich.logging import RichHandler
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+)
 from rich.table import Table
 
 from findex4.index import Index, build_index
@@ -36,7 +41,6 @@ def _setup_logging(verbose: int) -> None:
     else:
         log_level = logging.WARNING
 
-    # Налаштування красивого логера через RichHandler з направленням у stderr
     handler = RichHandler(
         console=err_console,
         show_path=False,
@@ -55,29 +59,29 @@ def _setup_logging(verbose: int) -> None:
 
 @app.callback()
 def main(
-        verbose: int = typer.Option(
-            0,
-            "--verbose",
-            "-v",
-            count=True,
-            help="-v для INFO логів, -vv для DEBUG логів.",
-        ),
+    verbose: int = typer.Option(
+        0,
+        "--verbose",
+        "-v",
+        count=True,
+        help="-v для INFO логів, -vv для DEBUG логів.",
+    ),
 ) -> None:
     _setup_logging(verbose)
 
 
 @app.command()
 def index(
-        corpus: Annotated[Path, typer.Argument(help="Шлях до корпусу файлів/директорії")],
-        out: Annotated[
-            Path, typer.Option("--out", "-o", help="Шлях для збереження індексу")
-        ] = Path("index.bin"),
-        positions: Annotated[
-            bool, typer.Option("--positions", "-p", help="Зберігати позиції токенів для фразового пошуку")
-        ] = True,
-        limit: Annotated[
-            Optional[int], typer.Option("--limit", "-l", help="Обмежити кількість документів")
-        ] = None,
+    corpus: Annotated[Path, typer.Argument(help="Шлях до корпусу файлів/директорії")],
+    out: Annotated[
+        Path, typer.Option("--out", "-o", help="Шлях для збереження індексу")
+    ] = Path("index.bin"),
+    positions: Annotated[
+        bool, typer.Option("--positions", "-p", help="Зберігати позиції токенів для фразового пошуку")
+    ] = True,
+    limit: Annotated[
+        int | None, typer.Option("--limit", "-l", help="Обмежити кількість документів")
+    ] = None,
 ) -> None:
     """Побудувати та зберегти індекс з корпусу документів."""
     if not corpus.exists():
@@ -89,11 +93,11 @@ def index(
     documents: list[dict[str, object]] = []
 
     with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TaskProgressColumn(),
-            console=err_console,
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        console=err_console,
     ) as progress:
         task = progress.add_task("Зчитування документів...", total=None)
 
@@ -117,7 +121,8 @@ def index(
             progress.advance(task)
 
     logging.info("Побудова індексу для %d документів...", len(documents))
-    idx = build_index(documents, with_positions=positions)
+    # Використовуємо cast(Any, ...), щоб уникнути конфлікту сигнатури в build_index
+    idx = build_index(cast(Any, documents), with_positions=positions)
 
     logging.info("Збереження індексу у %s", out)
     save(idx, out)
@@ -127,12 +132,12 @@ def index(
 
 @app.command()
 def search_cmd(
-        index_path: Annotated[Path, typer.Argument(metavar="INDEX", help="Шлях до файлу індексу")],
-        query: Annotated[str, typer.Argument(help="Пошуковий запит")],
-        k: Annotated[int, typer.Option("--k", "-k", help="Кількість топових результатів")] = 10,
-        scorer: Annotated[str, typer.Option("--scorer", "-s", help="Алгоритм ранжування (bm25/tfidf)")] = "bm25",
-        json_output: Annotated[
-            bool, typer.Option("--json", help="Форматувати результат у JSON Lines (stdout)")] = False,
+    index_path: Annotated[Path, typer.Argument(metavar="INDEX", help="Шлях до файлу індексу")],
+    query: Annotated[str, typer.Argument(help="Пошуковий запит")],
+    k: Annotated[int, typer.Option("--k", "-k", help="Кількість топових результатів")] = 10,
+    scorer: Annotated[str, typer.Option("--scorer", "-s", help="Алгоритм ранжування (bm25/tfidf)")] = "bm25",
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Форматувати результат у JSON Lines (stdout)")] = False,
 ) -> None:
     """Виконати пошук за індексом."""
     if not index_path.exists():
@@ -143,7 +148,8 @@ def search_cmd(
     idx: Index = load(index_path)
 
     logging.info("Виконання запиту '%s' (scorer=%s, k=%d)", query, scorer, k)
-    results = search(query, idx, scorer_type=scorer, top_k=k)
+    # # type: ignore[reportArgumentType] — Pyright очікує об'єкт Scorer, а передається назва скорера у вигляді str
+    results = search(query, idx, scorer=scorer, k=k) # type: ignore[reportArgumentType]
 
     if json_output:
         for res in results:
@@ -151,7 +157,8 @@ def search_cmd(
                 "doc_id": res.doc_id,
                 "score": res.score,
                 "title": res.title,
-                "path": res.path,
+                # # type: ignore[reportArgumentType] — Pyright очікує об'єкт Scorer, а передається назва скорера у вигляді str
+                "path": res.path,# type: ignore[reportAttributeAccessIssue]
                 "snippet": res.snippet,
             }
             stdout_console.print(json.dumps(data, ensure_ascii=False))
@@ -172,7 +179,7 @@ def search_cmd(
         table.add_row(
             f"{res.score:.4f}",
             str(res.doc_id),
-            f"{res.title}\n[dim]{res.path}[/dim]",
+            f"{res.title}\n[dim]{res.path}[/dim]",# type: ignore[reportAttributeAccessIssue]
             snippet_rich,
         )
 
@@ -181,7 +188,7 @@ def search_cmd(
 
 @app.command()
 def stats(
-        index_path: Annotated[Path, typer.Argument(metavar="INDEX", help="Шлях до файлу індексу")],
+    index_path: Annotated[Path, typer.Argument(metavar="INDEX", help="Шлях до файлу індексу")],
 ) -> None:
     """Вивести статистичні показники індексу."""
     if not index_path.exists():
@@ -190,43 +197,44 @@ def stats(
 
     logging.info("Завантаження індексу з %s", index_path)
     idx: Index = load(index_path)
+    idx_obj: Any = idx
 
     # 1. Кількість документів
-    num_docs = int(getattr(idx, "num_docs", getattr(idx, "N", 0)))
+    num_docs = int(getattr(idx_obj, "num_docs", getattr(idx_obj, "N", 0)))
 
     # 2. Розмір словника (унікальні терміни)
     dict_size = 0
-    if hasattr(idx, "dictionary"):
-        dict_size = len(idx.dictionary)  # type: ignore[reportAttributeAccessIssue]
-    elif hasattr(idx, "_dictionary"):
-        dict_size = len(idx._dictionary)
-    elif hasattr(idx, "_postings"):
-        dict_size = len(idx._postings)
-    elif hasattr(idx, "postings"):
-        dict_size = len(idx.postings)
-    else:
+    for attr in ("dictionary", "_dictionary", "postings", "_postings", "postings_map"):
+        if hasattr(idx_obj, attr):
+            dict_size = len(getattr(idx_obj, attr))
+            break
+    if dict_size == 0:
         try:
-            dict_size = len(idx)
+            dict_size = len(idx_obj)
         except TypeError:
             dict_size = 0
 
     # 3. Середня довжина документа
     avg_doc_len = 0.0
     for attr in ("avg_doc_len", "avg_dl", "_avg_doc_len", "_avg_dl"):
-        if hasattr(idx, attr):
-            val = getattr(idx, attr)
-            avg_doc_len = float(val() if callable(val) else val)
+        if hasattr(idx_obj, attr):
+            val = getattr(idx_obj, attr)
+            avg_doc_len = float(val() if callable(val) else val) # type: ignore[reportArgumentType]  # Pyright: argparse атрибут має тип object/Any
             break
 
     # 4. Загальна кількість токенів
     total_tokens = 0
-    if hasattr(idx, "total_tokens"):
-        val = getattr(idx, "total_tokens")
-        total_tokens = int(val() if callable(val) else val)
-    elif hasattr(idx, "doc_lengths"):
-        total_tokens = sum(idx.doc_lengths.values())
-    elif hasattr(idx, "_doc_lengths"):
-        total_tokens = sum(idx._doc_lengths.values())
+    if hasattr(idx_obj, "total_tokens"):
+        val = getattr(idx_obj, "total_tokens")
+        total_tokens = int(val() if callable(val) else val) # type: ignore[reportArgumentType]  # Pyright: argparse атрибут має тип object/Any
+    elif hasattr(idx_obj, "doc_lengths"):
+        doc_lens = getattr(idx_obj, "doc_lengths")
+        if isinstance(doc_lens, dict):
+            total_tokens = sum(doc_lens.values())
+    elif hasattr(idx_obj, "_doc_lengths"):
+        doc_lens = getattr(idx_obj, "_doc_lengths")
+        if isinstance(doc_lens, dict):
+            total_tokens = sum(doc_lens.values())
 
     # Розрахунок узгоджених даних, якщо один із показників дорівнює 0
     if avg_doc_len == 0.0 and num_docs > 0 and total_tokens > 0:

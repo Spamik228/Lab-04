@@ -1,6 +1,6 @@
 import re
-from findex4.tokenizer import tokenize
 
+from findex4.tokenizer import tokenize
 
 STOP_OPERATORS = {"and", "or", "not"}
 

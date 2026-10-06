@@ -1,10 +1,11 @@
 import json
 import pickle
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
-from findex4.utils import timed
+
 from findex4.index import DocMeta, Index, Posting
+from findex4.utils import timed
 
 
 def save_pickle(index: Index, path: Path | str) -> None:
