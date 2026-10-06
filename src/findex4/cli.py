@@ -225,14 +225,14 @@ def stats(
     # 4. Загальна кількість токенів
     total_tokens = 0
     if hasattr(idx_obj, "total_tokens"):
-        val = getattr(idx_obj, "total_tokens")
+        val = idx_obj.total_tokens
         total_tokens = int(val() if callable(val) else val) # type: ignore[reportArgumentType]  # Pyright: argparse атрибут має тип object/Any
     elif hasattr(idx_obj, "doc_lengths"):
-        doc_lens = getattr(idx_obj, "doc_lengths")
+        doc_lens = idx_obj.doc_lengths
         if isinstance(doc_lens, dict):
             total_tokens = sum(doc_lens.values())
     elif hasattr(idx_obj, "_doc_lengths"):
-        doc_lens = getattr(idx_obj, "_doc_lengths")
+        doc_lens = idx_obj._doc_lengths
         if isinstance(doc_lens, dict):
             total_tokens = sum(doc_lens.values())
 
